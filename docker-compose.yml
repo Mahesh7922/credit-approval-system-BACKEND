@@ -1,0 +1,42 @@
+
+services:
+  db:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    
+
+  celery_worker:
+    build: .
+    command: celery -A credit_approval_system worker -l info
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+      - redis
+      - web 
+
+volumes:
+  pg_data:
